@@ -17,9 +17,13 @@ interface ProgressCalendarProps {
 export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
 
-  const startDate = new Date(goal.startDate);
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + goal.duration);
+  const getEndDateStr = () => {
+    const start = new Date(goal.startDate);
+    const end = new Date(start);
+    end.setDate(start.getDate() + goal.duration - 1); // duration includes start date
+    return end.toISOString().split('T')[0];
+  };
+  const endDateStr = getEndDateStr();
 
   const getScoreForDate = (date: Date) => {
     const dateStr = getLocalISODate(date);
@@ -59,7 +63,8 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
   };
 
   const isWithinGoalPeriod = (date: Date) => {
-    return date >= startDate && date <= endDate;
+    const dateStr = getLocalISODate(date);
+    return dateStr >= goal.startDate && dateStr <= endDateStr;
   };
 
   const isToday = (date: Date) => {
