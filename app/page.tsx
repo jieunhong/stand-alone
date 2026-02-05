@@ -8,6 +8,7 @@ import { Statistics } from './components/Statistics';
 import { Menu, Calendar, BarChart3, CheckCircle } from 'lucide-react';
 import { getDatabase, type DailyCheckDoc, type GoalDoc } from './lib/db';
 import { Subscription } from 'rxjs';
+import { getLocalISODate } from './lib/date';
 
 // Type definitions to match component props
 export type Goal = Omit<GoalDoc, 'id'>;
@@ -85,7 +86,7 @@ export default function Home() {
   };
 
   const getTodayCheck = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalISODate();
     return dailyChecks.find(c => c.date === today);
   };
 
@@ -162,8 +163,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('daily')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'daily'
-                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-                : 'text-gray-400 hover:bg-[#F5F5F5]'
+              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+              : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <CheckCircle className="w-5 h-5 mb-1" />
@@ -172,8 +173,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('calendar')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'calendar'
-                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-                : 'text-gray-400 hover:bg-[#F5F5F5]'
+              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+              : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <Calendar className="w-5 h-5 mb-1" />
@@ -182,8 +183,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('stats')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'stats'
-                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-                : 'text-gray-400 hover:bg-[#F5F5F5]'
+              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+              : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <BarChart3 className="w-5 h-5 mb-1" />

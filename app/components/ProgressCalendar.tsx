@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getLocalISODate } from '../lib/date';
 
 interface ProgressCalendarProps {
   goal: {
@@ -21,7 +22,7 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
   endDate.setDate(startDate.getDate() + goal.duration);
 
   const getScoreForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalISODate(date);
     const check = dailyChecks.find(c => c.date === dateStr);
     return check?.score || 0;
   };
@@ -43,7 +44,7 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
     const startDayOfWeek = firstDay.getDay();
 
     const days = [];
-    
+
     // Add empty cells for days before the first day of the month
     for (let i = 0; i < startDayOfWeek; i++) {
       days.push(null);
@@ -124,9 +125,8 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
           {weekDays.map((day, index) => (
             <div
               key={day}
-              className={`text-center text-xs font-bold py-2 rounded-xl ${
-                index === 0 ? 'text-red-400 bg-red-50' : index === 6 ? 'text-blue-400 bg-blue-50' : 'text-gray-500 bg-gray-50'
-              }`}
+              className={`text-center text-xs font-bold py-2 rounded-xl ${index === 0 ? 'text-red-400 bg-red-50' : index === 6 ? 'text-blue-400 bg-blue-50' : 'text-gray-500 bg-gray-50'
+                }`}
             >
               {day}
             </div>
@@ -147,9 +147,8 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
             return (
               <div
                 key={day.toISOString()}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${
-                  withinPeriod ? getColorIntensity(score) : 'bg-gray-50'
-                } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : 'hover:scale-105'}`}
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${withinPeriod ? getColorIntensity(score) : 'bg-gray-50'
+                  } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : 'hover:scale-105'}`}
               >
                 <span className={`text-sm font-semibold ${score > 60 ? 'text-white' : 'text-gray-700'}`}>
                   {day.getDate()}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, Sparkles } from 'lucide-react';
+import { getLocalISODate } from '../lib/date';
 
 interface DailyCheckProps {
   onSubmit: (data: {
@@ -72,7 +73,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
     const allFilled = Object.values(values).every(v => v > 0);
     if (!allFilled) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalISODate();
     onSubmit({
       date: today,
       sleep,
@@ -122,11 +123,10 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
                     <button
                       key={level}
                       onClick={() => setter(level)}
-                      className={`flex-1 h-12 rounded-2xl transition-all duration-200 text-sm font-semibold ${
-                        value === level
-                          ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-lg scale-110 border-2 border-white'
-                          : 'bg-white/80 text-gray-400 border-2 border-gray-100 hover:border-[#A8E6A3] hover:scale-105'
-                      }`}
+                      className={`flex-1 h-12 rounded-2xl transition-all duration-200 text-sm font-semibold ${value === level
+                        ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-lg scale-110 border-2 border-white'
+                        : 'bg-white/80 text-gray-400 border-2 border-gray-100 hover:border-[#A8E6A3] hover:scale-105'
+                        }`}
                     >
                       {level}
                     </button>
@@ -172,11 +172,10 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
       <button
         onClick={handleSubmit}
         disabled={!allFilled}
-        className={`w-full py-4 rounded-3xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg ${
-          allFilled
-            ? 'bg-gradient-to-r from-[#A8E6A3] to-[#7DD87D] text-white hover:shadow-2xl hover:scale-105 active:scale-95'
-            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-        }`}
+        className={`w-full py-4 rounded-3xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg ${allFilled
+          ? 'bg-gradient-to-r from-[#A8E6A3] to-[#7DD87D] text-white hover:shadow-2xl hover:scale-105 active:scale-95'
+          : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
       >
         <Check className="w-5 h-5" />
         {existingCheck ? '✨ 수정 완료' : '✨ 체크 완료'}
