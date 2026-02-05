@@ -6,23 +6,12 @@ import { DailyCheck } from './components/DailyCheck';
 import { ProgressCalendar } from './components/ProgressCalendar';
 import { Statistics } from './components/Statistics';
 import { Menu, Calendar, BarChart3, CheckCircle } from 'lucide-react';
+import { getDatabase, type DailyCheckDoc, type GoalDoc } from './lib/db';
+import { Subscription } from 'rxjs';
 
-export interface Goal {
-  text: string;
-  duration: number;
-  startDate: string;
-}
-
-export interface DailyCheckData {
-  date: string;
-  sleep: number;
-  nutrition: number;
-  distress: number;
-  impulse: number;
-  exercise: number;
-  score: number;
-  diary?: string;
-}
+// Type definitions to match component props
+export type Goal = Omit<GoalDoc, 'id'>;
+export type DailyCheckData = DailyCheckDoc;
 
 export default function Home() {
   const [goal, setGoal] = useState<Goal | null>(null);
@@ -31,27 +20,68 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const savedGoal = localStorage.getItem('selfRelianceGoal');
-    const savedChecks = localStorage.getItem('dailyChecks');
+    let goalSub: Subscription;
+    let checkSub: Subscription;
 
-    if (savedGoal) {
-      setGoal(JSON.parse(savedGoal));
-    }
-    if (savedChecks) {
-      setDailyChecks(JSON.parse(savedChecks));
-    }
-    setIsLoaded(true);
+    const initDB = async () => {
+      try {
+        const db = await getDatabase();
+
+        // Subscribe to goal changes
+        // We assume there is only one "current" goal for now
+        goalSub = db.goals.findOne('current').$.subscribe(doc => {
+          if (doc) {
+            setGoal({
+              text: doc.text,
+              duration: doc.duration,
+              startDate: doc.startDate
+            });
+          } else {
+            setGoal(null);
+          }
+        });
+
+        // Subscribe to daily checks changes
+        checkSub = db.daily_checks.find().$.subscribe(docs => {
+          const checks = docs.map(doc => doc.toJSON());
+          setDailyChecks(checks);
+        });
+
+        setIsLoaded(true);
+      } catch (err) {
+        console.error("Failed to initialize DB:", err);
+        // Fallback or error handling could be added here
+        setIsLoaded(true);
+      }
+    };
+
+    initDB();
+
+    return () => {
+      if (goalSub) goalSub.unsubscribe();
+      if (checkSub) checkSub.unsubscribe();
+    };
   }, []);
 
-  const handleGoalSubmit = (goalData: Goal) => {
-    setGoal(goalData);
-    localStorage.setItem('selfRelianceGoal', JSON.stringify(goalData));
+  const handleGoalSubmit = async (goalData: Goal) => {
+    try {
+      const db = await getDatabase();
+      await db.goals.upsert({
+        id: 'current',
+        ...goalData
+      });
+    } catch (error) {
+      console.error("Failed to save goal:", error);
+    }
   };
 
-  const handleDailyCheckSubmit = (checkData: DailyCheckData) => {
-    const updatedChecks = [...dailyChecks.filter(c => c.date !== checkData.date), checkData];
-    setDailyChecks(updatedChecks);
-    localStorage.setItem('dailyChecks', JSON.stringify(updatedChecks));
+  const handleDailyCheckSubmit = async (checkData: DailyCheckData) => {
+    try {
+      const db = await getDatabase();
+      await db.daily_checks.upsert(checkData);
+    } catch (error) {
+      console.error("Failed to save daily check:", error);
+    }
   };
 
   const getTodayCheck = () => {
@@ -70,7 +100,13 @@ export default function Home() {
   };
 
   if (!isLoaded) {
-    return null; // Or a loading spinner
+    // Loading state
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="w-8 h-8 border-4 border-[#A8E6A3] border-t-transparent rounded-full animate-spin"></div>
+        <p className="mt-4 text-sm text-gray-500">데이터를 불러오는 중...</p>
+      </div>
+    );
   }
 
   if (!goal) {
@@ -126,8 +162,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('daily')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'daily'
-              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-              : 'text-gray-400 hover:bg-[#F5F5F5]'
+                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+                : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <CheckCircle className="w-5 h-5 mb-1" />
@@ -136,8 +172,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('calendar')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'calendar'
-              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-              : 'text-gray-400 hover:bg-[#F5F5F5]'
+                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+                : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <Calendar className="w-5 h-5 mb-1" />
@@ -146,8 +182,8 @@ export default function Home() {
           <button
             onClick={() => setCurrentView('stats')}
             className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'stats'
-              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
-              : 'text-gray-400 hover:bg-[#F5F5F5]'
+                ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+                : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}
           >
             <BarChart3 className="w-5 h-5 mb-1" />
