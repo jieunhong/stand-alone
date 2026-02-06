@@ -89,7 +89,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
   const allFilled = Object.values(values).every(v => v > 0);
 
   return (
-    <div className="h-full flex flex-col p-5 gap-4">
+    <div className="flex flex-col p-5 gap-4">
       {/* Date with soft background */}
       <div className="text-center bg-white/60 backdrop-blur-sm rounded-3xl py-3 px-4 shadow-sm">
         <p className="text-sm text-gray-600 font-medium">
@@ -152,7 +152,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
       )}
 
       {/* Diary Input - Soft Textarea */}
-      <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/50 flex-1 min-h-0 flex flex-col">
+      <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/50 flex flex-col">
         <label className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
           ✨ 오늘의 한 줄
         </label>
@@ -160,7 +160,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
           value={diary}
           onChange={(e) => setDiary(e.target.value)}
           placeholder="오늘 하루를 짧게 기록해보세요..."
-          className="flex-1 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
+          className="w-full h-32 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
           maxLength={100}
         />
         <div className="text-xs text-gray-400 mt-2 text-right bg-gray-50 rounded-full px-3 py-1 inline-block ml-auto">

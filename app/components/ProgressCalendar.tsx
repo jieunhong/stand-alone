@@ -89,7 +89,7 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
     : 0;
 
   return (
-    <div className="h-full p-5 space-y-4 overflow-auto">
+    <div className="p-5 space-y-4">
       {/* Summary Card */}
       <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/50">
         <div className="grid grid-cols-2 gap-3">

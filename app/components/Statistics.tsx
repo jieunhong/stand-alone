@@ -33,7 +33,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
       date.setDate(weekAgo.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
       const check = dailyChecks.find(c => c.date === dateStr);
-      
+
       data.push({
         date: `${date.getMonth() + 1}/${date.getDate()}`,
         fullDate: dateStr,
@@ -117,7 +117,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
   };
 
   return (
-    <div className="h-full p-5 space-y-4 overflow-auto">
+    <div className="p-5 space-y-4">
       {/* Overview Cards */}
       <div className="grid grid-cols-3 gap-2.5">
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-3 border border-white/50">
@@ -156,21 +156,19 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${
-                viewMode === 'week'
+              className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${viewMode === 'week'
                   ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
                   : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               주간
             </button>
             <button
               onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${
-                viewMode === 'month'
+              className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${viewMode === 'month'
                   ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
                   : 'bg-white text-gray-600 hover:bg-gray-50'
-              }`}
+                }`}
             >
               월간
             </button>
@@ -181,17 +179,17 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E0E0E0" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 tick={{ fill: '#666', fontSize: 10 }}
                 stroke="#E0E0E0"
               />
-              <YAxis 
+              <YAxis
                 domain={[0, 100]}
                 tick={{ fill: '#666', fontSize: 10 }}
                 stroke="#E0E0E0"
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{
                   backgroundColor: 'white',
                   border: '2px solid #A8E6A3',
@@ -200,10 +198,10 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
                   boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
                 }}
               />
-              <Line 
-                type="monotone" 
-                dataKey="score" 
-                stroke="#7DD87D" 
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#7DD87D"
                 strokeWidth={3}
                 dot={{ fill: '#7DD87D', r: 4, strokeWidth: 2, stroke: 'white' }}
                 name="점수"
