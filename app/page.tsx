@@ -118,7 +118,7 @@ export default function Home() {
   const todayCheck = getTodayCheck();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex flex-col max-w-md mx-auto">
+    <div className="h-dvh bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex flex-col max-w-md mx-auto">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b border-[#E0E0E0]/50 flex-shrink-0 shadow-sm">
         <div className="px-5 py-4">
