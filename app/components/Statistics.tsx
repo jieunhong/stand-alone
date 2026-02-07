@@ -102,11 +102,62 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
 
   const categoryAverages = calculateCategoryAverages();
 
-  const totalDays = Math.ceil((new Date().getTime() - new Date(goal.startDate).getTime()) / (1000 * 60 * 60 * 24));
+  // Fix totalDays calculation and completion rate
+  const getGoalDays = () => {
+    const start = new Date(goal.startDate);
+    start.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const diff = Math.ceil((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.max(1, diff);
+  };
+
+  const totalDays = getGoalDays();
   const completionRate = dailyChecks.length > 0 ? Math.round((dailyChecks.length / totalDays) * 100) : 0;
   const averageScore = dailyChecks.length > 0
     ? Math.round(dailyChecks.reduce((sum, check) => sum + check.score, 0) / dailyChecks.length)
     : 0;
+
+  const calculateStreak = () => {
+    if (dailyChecks.length === 0) return 0;
+
+    // Sort dates in descending order (most recent first)
+    const sortedDates = dailyChecks
+      .map(c => c.date)
+      .sort((a, b) => new Date(b).getTime() - new Date(a).getTime());
+
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const latestDate = new Date(sortedDates[0]);
+    latestDate.setHours(0, 0, 0, 0);
+
+    // Streak is active if the latest record is today or yesterday
+    const diffToToday = (today.getTime() - latestDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffToToday > 1) return 0;
+
+    streak = 1;
+    let currentDate = latestDate;
+
+    for (let i = 1; i < sortedDates.length; i++) {
+      const prevDate = new Date(sortedDates[i]);
+      prevDate.setHours(0, 0, 0, 0);
+
+      const dayDiff = (currentDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (dayDiff === 1) {
+        streak++;
+        currentDate = prevDate;
+      } else if (dayDiff > 1) {
+        break;
+      }
+      // If dayDiff is 0 (multiple entries in one day, though schema prevents it), just continue
+    }
+    return streak;
+  };
+
+  const streak = calculateStreak();
 
   const categoryLabels = {
     sleep: '😴 수면',
@@ -144,7 +195,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
             <span className="text-xs text-gray-500 font-medium">연속</span>
           </div>
           <div className="text-2xl font-bold bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] bg-clip-text text-transparent">
-            {dailyChecks.length}일
+            {streak}일
           </div>
         </div>
       </div>
@@ -157,8 +208,8 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
             <button
               onClick={() => setViewMode('week')}
               className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${viewMode === 'week'
-                  ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
                 }`}
             >
               주간
@@ -166,8 +217,8 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
             <button
               onClick={() => setViewMode('month')}
               className={`px-3 py-1.5 text-xs rounded-xl transition-all duration-200 font-semibold shadow-sm ${viewMode === 'month'
-                  ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
-                  : 'bg-white text-gray-600 hover:bg-gray-50'
+                ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-50'
                 }`}
             >
               월간
@@ -239,30 +290,68 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
       {/* Insights */}
       <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/50">
         <h3 className="text-sm font-bold text-gray-800 mb-3">💬 인사이트</h3>
-        <div className="space-y-2.5 text-xs text-gray-600">
-          {completionRate >= 80 && (
-            <div className="flex items-start gap-2.5 p-3 bg-gradient-to-br from-[#A8E6A3]/20 to-[#7DD87D]/20 rounded-2xl border border-[#A8E6A3]/30 shadow-sm">
-              <span className="text-[#7DD87D] text-base">✓</span>
-              <p className="leading-relaxed">훌륭해요! {completionRate}%의 높은 실천율을 유지하고 있어요.</p>
-            </div>
-          )}
-          {averageScore >= 70 && (
-            <div className="flex items-start gap-2.5 p-3 bg-gradient-to-br from-[#A8E6A3]/20 to-[#7DD87D]/20 rounded-2xl border border-[#A8E6A3]/30 shadow-sm">
-              <span className="text-[#7DD87D] text-base">✓</span>
-              <p className="leading-relaxed">평균 {averageScore}점으로 안정적인 생활을 이어가고 있어요.</p>
-            </div>
-          )}
-          {dailyChecks.length >= 7 && (
-            <div className="flex items-start gap-2.5 p-3 bg-gradient-to-br from-[#A8E6A3]/20 to-[#7DD87D]/20 rounded-2xl border border-[#A8E6A3]/30 shadow-sm">
-              <span className="text-[#7DD87D] text-base">✓</span>
-              <p className="leading-relaxed">일주일 이상 꾸준히 기록 중이에요. 계속 힘내세요!</p>
-            </div>
-          )}
-          {dailyChecks.length === 0 && (
+        <div className="space-y-3">
+          {dailyChecks.length === 0 ? (
             <div className="flex items-start gap-2.5 p-3 bg-gray-50 rounded-2xl shadow-sm">
-              <span className="text-base">💡</span>
-              <p className="leading-relaxed">아직 데이터가 없어요. 일일 체크를 시작해보세요!</p>
+              <span className="text-base text-gray-400">💡</span>
+              <p className="leading-relaxed">아직 데이터가 없어요. 자립 여정의 첫 걸음을 기록해보세요!</p>
             </div>
+          ) : (
+            <>
+              {completionRate >= 80 ? (
+                <div className="flex items-start gap-2.5 p-3 bg-[#A8E6A3]/10 rounded-2xl border border-[#A8E6A3]/20 shadow-sm">
+                  <span className="text-[#7DD87D] text-sm">✨</span>
+                  <p className="leading-relaxed text-gray-700 font-medium font-medium">훌륭한 실천력! {completionRate}%의 높은 실천율을 보이고 있어요.</p>
+                </div>
+              ) : completionRate <= 50 ? (
+                <div className="flex items-start gap-2.5 p-3 bg-orange-50 rounded-2xl border border-orange-100 shadow-sm">
+                  <span className="text-orange-400 text-sm">💡</span>
+                  <p className="leading-relaxed text-gray-700 font-medium">기록이 조금 띄엄띄엄해요. 매일 밤 1분만 자신을 돌아보는 시간을 가져보세요.</p>
+                </div>
+              ) : null}
+
+              {averageScore >= 80 ? (
+                <div className="flex items-start gap-2.5 p-3 bg-[#7DD87D]/10 rounded-2xl border border-[#7DD87D]/20 shadow-sm">
+                  <span className="text-[#7DD87D] text-sm">💪</span>
+                  <p className="leading-relaxed text-gray-700 font-medium">매우 안정적이에요. 지금처럼 자신을 잘 돌봐주세요.</p>
+                </div>
+              ) : averageScore < 60 ? (
+                <div className="flex items-start gap-2.5 p-3 bg-red-50 rounded-2xl border border-red-100 shadow-sm">
+                  <span className="text-red-400 text-sm">💊</span>
+                  <p className="leading-relaxed text-gray-700 font-medium">평균 점수가 낮아졌어요. 어디가 불편한지 일기를 통해 들여다볼까요?</p>
+                </div>
+              ) : null}
+
+              {categoryAverages && (
+                <>
+                  {parseFloat(categoryAverages.sleep) < 3 && (
+                    <div className="flex items-start gap-2.5 p-3 bg-blue-50 rounded-2xl border border-blue-100 shadow-sm">
+                      <span className="text-blue-400 text-sm">💤</span>
+                      <p className="leading-relaxed text-gray-700 font-medium">수면 점수가 낮아요. 정해진 시간에 눕는 습관부터 시작해봐요.</p>
+                    </div>
+                  )}
+                  {parseFloat(categoryAverages.distress) < 3 && (
+                    <div className="flex items-start gap-2.5 p-3 bg-purple-50 rounded-2xl border border-purple-100 shadow-sm">
+                      <span className="text-purple-400 text-sm">🧘</span>
+                      <p className="leading-relaxed text-gray-700 font-medium">정신적으로 힘든 시기인가요? 나만의 편안한 공간에서 휴식이 필요해요.</p>
+                    </div>
+                  )}
+                  {parseFloat(categoryAverages.nutrition) < 3 && (
+                    <div className="flex items-start gap-2.5 p-3 bg-yellow-50 rounded-2xl border border-yellow-100 shadow-sm">
+                      <span className="text-yellow-500 text-sm">🍎</span>
+                      <p className="leading-relaxed text-gray-700 font-medium">영양 섭취에 더 신경을 써주세요. 건강한 식단이 기분을 바꿀 수 있어요.</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {streak >= 3 && (
+                <div className="flex items-start gap-2.5 p-3 bg-gradient-to-br from-[#FFE082]/20 to-[#FFD54F]/20 rounded-2xl border border-orange-100 shadow-sm">
+                  <span className="text-orange-400 text-sm">🔥</span>
+                  <p className="leading-relaxed text-gray-700 font-medium">{streak}일 연속 기록 중! 기록의 힘이 당신을 바꿀 거예요.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
