@@ -34,9 +34,9 @@ export function ProgressCalendar({ goal, dailyChecks, onSelectDate }: ProgressCa
 
   const getColorIntensity = (score: number) => {
     if (score === 0) return 'bg-[#F5F5F5]';
-    if (score < 40) return 'bg-[#A8E6A3] bg-opacity-30';
-    if (score < 60) return 'bg-[#A8E6A3] bg-opacity-50';
-    if (score < 80) return 'bg-[#7DD87D] bg-opacity-70';
+    if (score < 40) return 'bg-[#A8E6A3]/30';
+    if (score < 60) return 'bg-[#A8E6A3]/60';
+    if (score < 80) return 'bg-[#7DD87D]/80';
     return 'bg-[#7DD87D]';
   };
 
@@ -149,19 +149,21 @@ export function ProgressCalendar({ goal, dailyChecks, onSelectDate }: ProgressCa
             const score = getScoreForDate(day);
             const withinPeriod = isWithinGoalPeriod(day);
             const today = isToday(day);
+            const isFuture = day > new Date();
 
             return (
               <div
                 key={day.toISOString()}
-                onClick={() => onSelectDate(getLocalISODate(day))}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm cursor-pointer ${withinPeriod ? getColorIntensity(score) : 'bg-gray-50'
-                  } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : 'hover:scale-105 hover:shadow-md'}`}
+                onClick={() => !isFuture && onSelectDate(getLocalISODate(day))}
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${isFuture ? 'cursor-default opacity-40' : 'cursor-pointer hover:scale-105 hover:shadow-md'
+                  } ${score > 0 ? getColorIntensity(score) : (withinPeriod ? 'bg-[#F5F5F5]' : 'bg-transparent')
+                  } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : ''}`}
               >
-                <span className={`text-sm font-semibold ${score > 60 ? 'text-white' : 'text-gray-700'}`}>
+                <span className={`text-sm font-semibold ${score >= 80 ? 'text-white' : 'text-gray-700'}`}>
                   {day.getDate()}
                 </span>
                 {score > 0 && (
-                  <span className={`text-[10px] font-bold ${score > 60 ? 'text-white/90' : 'text-gray-600'}`}>
+                  <span className={`text-[10px] font-bold ${score >= 80 ? 'text-white/90' : 'text-gray-600'}`}>
                     {score}
                   </span>
                 )}
