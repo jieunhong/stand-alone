@@ -174,7 +174,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
         <div className="bg-white/70 backdrop-blur-sm rounded-2xl shadow-lg p-3 border border-white/50">
           <div className="flex items-center gap-1 mb-2">
             <Target className="w-3.5 h-3.5 text-[#7DD87D]" />
-            <span className="text-xs text-gray-500 font-medium">실천율</span>
+            <span className="text-xs text-gray-500 font-medium">기록률</span>
           </div>
           <div className="text-2xl font-bold bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] bg-clip-text text-transparent">
             {completionRate}%
@@ -301,12 +301,12 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
               {completionRate >= 80 ? (
                 <div className="flex items-start gap-2.5 p-3 bg-[#A8E6A3]/10 rounded-2xl border border-[#A8E6A3]/20 shadow-sm">
                   <span className="text-[#7DD87D] text-sm">✨</span>
-                  <p className="leading-relaxed text-gray-700 font-medium font-medium">훌륭한 실천력! {completionRate}%의 높은 실천율을 보이고 있어요.</p>
+                  <p className="leading-relaxed text-gray-700 font-medium font-medium">기록 장인! {completionRate}%의 매우 높은 기록률을 보이고 있어요.</p>
                 </div>
               ) : completionRate <= 50 ? (
                 <div className="flex items-start gap-2.5 p-3 bg-orange-50 rounded-2xl border border-orange-100 shadow-sm">
                   <span className="text-orange-400 text-sm">💡</span>
-                  <p className="leading-relaxed text-gray-700 font-medium">기록이 조금 띄엄띄엄해요. 매일 밤 1분만 자신을 돌아보는 시간을 가져보세요.</p>
+                  <p className="leading-relaxed text-gray-700 font-medium">최근 기록이 조금 뜸해졌네요. 다시 페이스를 찾아 기록을 이어가볼까요?</p>
                 </div>
               ) : null}
 

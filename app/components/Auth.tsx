@@ -25,6 +25,9 @@ export function Auth() {
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
+                    options: {
+                        emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                    }
                 });
                 if (error) throw error;
                 toast.success('회원가입이 완료되었습니다! 이메일을 확인해주세요.');
