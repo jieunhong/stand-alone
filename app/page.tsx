@@ -14,6 +14,12 @@ import { Auth } from './components/Auth';
 import { Session } from '@supabase/supabase-js';
 import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "./components/ui/dialog";
 
 // Type definitions to match component props
 export type Goal = Omit<GoalDoc, 'id'>;
@@ -25,6 +31,7 @@ export default function Home() {
   const [currentView, setCurrentView] = useState<'daily' | 'calendar' | 'stats'>('daily');
   const [isLoaded, setIsLoaded] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -184,9 +191,9 @@ export default function Home() {
     }
   };
 
-  const getTodayCheck = () => {
-    const today = getLocalISODate();
-    return dailyChecks.find(c => c.date === today);
+  const getViewingCheck = () => {
+    const date = selectedDate || getLocalISODate();
+    return dailyChecks.find(c => c.date === date);
   };
 
   const getRemainingDays = () => {
@@ -226,7 +233,7 @@ export default function Home() {
   };
 
   const remainingDays = getRemainingDays();
-  const todayCheck = getTodayCheck();
+  const viewingCheck = getViewingCheck();
 
   return (
     <div className="h-dvh bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex flex-col max-w-md mx-auto">
@@ -260,14 +267,39 @@ export default function Home() {
         {currentView === 'daily' && (
           <DailyCheck
             onSubmit={handleDailyCheckSubmit}
-            existingCheck={todayCheck}
+            existingCheck={viewingCheck}
           />
         )}
         {currentView === 'calendar' && (
-          <ProgressCalendar
-            goal={goal}
-            dailyChecks={dailyChecks}
-          />
+          <>
+            <ProgressCalendar
+              goal={goal}
+              dailyChecks={dailyChecks}
+              onSelectDate={(date) => {
+                setSelectedDate(date);
+              }}
+            />
+            {/* Modal for Past Records */}
+            <Dialog open={!!selectedDate} onOpenChange={(open) => !open && setSelectedDate(null)}>
+              <DialogContent className="max-w-md p-0 overflow-hidden border-2 border-white/50 bg-[#F8F9FA]/95 backdrop-blur-xl shadow-2xl rounded-[40px]">
+                <DialogHeader className="p-6 pb-0">
+                  <DialogTitle className="text-xl font-bold text-gray-800 text-center flex flex-col items-center gap-1">
+                    <span className="text-[#7DD87D]">자립 기록</span>
+                    <span className="text-xs font-medium text-gray-400">내역을 확인하고 수정할 수 있습니다</span>
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="max-h-[75dvh] overflow-y-auto custom-scrollbar px-2 mb-4">
+                  <DailyCheck
+                    onSubmit={(data) => {
+                      handleDailyCheckSubmit(data);
+                      setSelectedDate(null);
+                    }}
+                    existingCheck={viewingCheck || (selectedDate ? { date: selectedDate } as any : undefined)}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
         {currentView === 'stats' && (
           <Statistics
@@ -281,8 +313,11 @@ export default function Home() {
       <nav className="bg-white/90 backdrop-blur-sm border-t border-[#E0E0E0]/50 flex-shrink-0 shadow-lg">
         <div className="grid grid-cols-3 gap-1 p-2">
           <button
-            onClick={() => setCurrentView('daily')}
-            className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'daily'
+            onClick={() => {
+              setSelectedDate(null);
+              setCurrentView('daily');
+            }}
+            className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'daily' && !selectedDate
               ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
               : 'text-gray-400 hover:bg-[#F5F5F5]'
               }`}

@@ -40,16 +40,27 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
   const [exercise, setExercise] = useState(0);
   const [diary, setDiary] = useState('');
 
+  // Use existingCheck.date or fallback to today
+  const targetDate = existingCheck?.date || getLocalISODate();
+
   useEffect(() => {
-    if (existingCheck) {
+    if (existingCheck && 'sleep' in existingCheck) {
       setSleep(existingCheck.sleep);
       setNutrition(existingCheck.nutrition);
       setDistress(existingCheck.distress);
       setImpulse(existingCheck.impulse);
       setExercise(existingCheck.exercise);
       setDiary(existingCheck.diary || '');
+    } else {
+      // Reset if no existing check or just a date placeholder
+      setSleep(0);
+      setNutrition(0);
+      setDistress(0);
+      setImpulse(0);
+      setExercise(0);
+      setDiary('');
     }
-  }, [existingCheck]);
+  }, [existingCheck, targetDate]);
 
   const checkItems: CheckItem[] = [
     { id: 'sleep', label: '수면', emoji: '😴' },
@@ -73,9 +84,8 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
     const allFilled = Object.values(values).every(v => v > 0);
     if (!allFilled) return;
 
-    const today = getLocalISODate();
     onSubmit({
-      date: today,
+      date: targetDate,
       sleep,
       nutrition,
       distress,
@@ -88,12 +98,14 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
 
   const allFilled = Object.values(values).every(v => v > 0);
 
+  const displayDate = new Date(targetDate);
+
   return (
     <div className="flex flex-col p-5 gap-4">
       {/* Date with soft background */}
       <div className="text-center bg-white/60 backdrop-blur-sm rounded-3xl py-3 px-4 shadow-sm">
         <p className="text-sm text-gray-600 font-medium">
-          {new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
+          {displayDate.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
         </p>
       </div>
 

@@ -12,9 +12,10 @@ interface ProgressCalendarProps {
     date: string;
     score: number;
   }>;
+  onSelectDate: (date: string) => void;
 }
 
-export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
+export function ProgressCalendar({ goal, dailyChecks, onSelectDate }: ProgressCalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
 
   const getEndDateStr = () => {
@@ -152,8 +153,9 @@ export function ProgressCalendar({ goal, dailyChecks }: ProgressCalendarProps) {
             return (
               <div
                 key={day.toISOString()}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${withinPeriod ? getColorIntensity(score) : 'bg-gray-50'
-                  } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : 'hover:scale-105'}`}
+                onClick={() => onSelectDate(getLocalISODate(day))}
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm cursor-pointer ${withinPeriod ? getColorIntensity(score) : 'bg-gray-50'
+                  } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : 'hover:scale-105 hover:shadow-md'}`}
               >
                 <span className={`text-sm font-semibold ${score > 60 ? 'text-white' : 'text-gray-700'}`}>
                   {day.getDate()}
