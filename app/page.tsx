@@ -6,9 +6,14 @@ import { DailyCheck } from './components/DailyCheck';
 import { ProgressCalendar } from './components/ProgressCalendar';
 import { Statistics } from './components/Statistics';
 import { Menu, Calendar, BarChart3, CheckCircle } from 'lucide-react';
-import { getDatabase, type DailyCheckDoc, type GoalDoc } from './lib/db';
+import { getDatabase, clearDatabase, type DailyCheckDoc, type GoalDoc } from './lib/db';
 import { Subscription } from 'rxjs';
 import { getLocalISODate } from './lib/date';
+import { supabase } from './lib/supabase';
+import { Auth } from './components/Auth';
+import { Session } from '@supabase/supabase-js';
+import { LogOut } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Type definitions to match component props
 export type Goal = Omit<GoalDoc, 'id'>;
@@ -19,17 +24,70 @@ export default function Home() {
   const [dailyChecks, setDailyChecks] = useState<DailyCheckData[]>([]);
   const [currentView, setCurrentView] = useState<'daily' | 'calendar' | 'stats'>('daily');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+      });
+
+      return subscription;
+    };
+
     let goalSub: Subscription;
     let checkSub: Subscription;
+    let authSubscription: any;
 
-    const initDB = async () => {
+    const initDB = async (currentSession: Session | null) => {
       try {
-        const db = await getDatabase();
+        const userId = currentSession?.user.id || 'guest';
+        const db = await getDatabase(userId);
+
+        if (currentSession) {
+          // Fetch existing data from Supabase - Ensure we get EVERYTHING
+          const { data: goalData, error: goalError } = await supabase
+            .from('goals')
+            .select('*')
+            .eq('user_id', currentSession.user.id)
+            .single();
+
+          if (goalData && !goalError) {
+            await db.goals.upsert({
+              id: 'current',
+              text: goalData.text,
+              duration: goalData.duration,
+              startDate: goalData.start_date
+            });
+          }
+
+          const { data: checkData, error: checkError } = await supabase
+            .from('daily_checks')
+            .select('*')
+            .eq('user_id', currentSession.user.id);
+
+          if (checkData && !checkError) {
+            // Bulk upsert would be better if RXDB supported it easily, 
+            // but for now, we iterate to ensure local DB matches remote.
+            for (const check of checkData) {
+              await db.daily_checks.upsert({
+                date: check.date,
+                sleep: check.sleep,
+                nutrition: check.nutrition,
+                distress: check.distress,
+                impulse: check.impulse,
+                exercise: check.exercise,
+                score: check.score,
+                diary: check.diary
+              });
+            }
+          }
+        }
 
         // Subscribe to goal changes
-        // We assume there is only one "current" goal for now
         goalSub = db.goals.findOne('current').$.subscribe(doc => {
           if (doc) {
             setGoal({
@@ -51,37 +109,78 @@ export default function Home() {
         setIsLoaded(true);
       } catch (err) {
         console.error("Failed to initialize DB:", err);
-        // Fallback or error handling could be added here
         setIsLoaded(true);
       }
     };
 
-    initDB();
+    const runInit = async () => {
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      setSession(initialSession);
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        setSession(session);
+        if (session) initDB(session);
+      });
+      authSubscription = subscription;
+
+      initDB(initialSession);
+    };
+
+    runInit();
 
     return () => {
       if (goalSub) goalSub.unsubscribe();
       if (checkSub) checkSub.unsubscribe();
+      if (authSubscription) authSubscription.unsubscribe();
     };
   }, []);
 
   const handleGoalSubmit = async (goalData: Goal) => {
     try {
-      const db = await getDatabase();
+      if (session) {
+        const { error } = await supabase.from('goals').upsert({
+          user_id: session.user.id,
+          text: goalData.text,
+          duration: goalData.duration,
+          start_date: goalData.startDate,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id'
+        });
+        if (error) throw error;
+      }
+
+      const db = await getDatabase(session?.user.id);
       await db.goals.upsert({
         id: 'current',
         ...goalData
       });
+      toast.success('목표가 설정되었습니다!');
     } catch (error) {
       console.error("Failed to save goal:", error);
+      toast.error('목표 저장에 실패했습니다.');
     }
   };
 
   const handleDailyCheckSubmit = async (checkData: DailyCheckData) => {
     try {
-      const db = await getDatabase();
+      if (session) {
+        const { error } = await supabase.from('daily_checks').upsert({
+          user_id: session.user.id,
+          ...checkData,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'user_id,date'
+        });
+        if (error) throw error;
+      }
+
+      const db = await getDatabase(session?.user.id);
       await db.daily_checks.upsert(checkData);
+      toast.success('오늘의 체크가 저장되었습니다!');
     } catch (error) {
       console.error("Failed to save daily check:", error);
+      toast.error('저장에 실패했습니다.');
     }
   };
 
@@ -110,9 +209,21 @@ export default function Home() {
     );
   }
 
+  if (!session) {
+    return <Auth />;
+  }
+
   if (!goal) {
     return <Onboarding onSubmit={handleGoalSubmit} />;
   }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    clearDatabase();
+    setGoal(null);
+    setDailyChecks([]);
+    toast.success('로그아웃되었습니다.');
+  };
 
   const remainingDays = getRemainingDays();
   const todayCheck = getTodayCheck();
@@ -124,7 +235,16 @@ export default function Home() {
         <div className="px-5 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 pr-3">
-              <h1 className="font-semibold text-gray-800 truncate">자립 여정</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-semibold text-gray-800 truncate">자립 여정</h1>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-gray-400 hover:text-red-400 transition-colors"
+                  title="로그아웃"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
               <p className="text-xs text-gray-500 mt-0.5 truncate">{goal.text}</p>
             </div>
             <div className="text-right flex-shrink-0 bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] rounded-2xl px-4 py-2 shadow-md">

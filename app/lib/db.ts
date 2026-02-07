@@ -80,15 +80,16 @@ const goalSchema: RxJsonSchema<GoalDoc> = {
 };
 
 let dbPromise: Promise<MyDatabase> | null = null;
+let currentUserId: string | null = null;
 
-const _create = async () => {
+const _create = async (userId: string = 'guest') => {
     let storage: any = getRxStorageDexie();
     if (process.env.NODE_ENV === 'development') {
         storage = wrappedValidateAjvStorage({ storage });
     }
 
     const db = await createRxDatabase<DatabaseCollections>({
-        name: 'stand_alone_db',
+        name: `stand_alone_db_${userId}`,
         storage
     });
 
@@ -104,9 +105,16 @@ const _create = async () => {
     return db;
 };
 
-export const getDatabase = () => {
-    if (!dbPromise) {
-        dbPromise = _create();
+export const getDatabase = (userId?: string) => {
+    const id = userId || 'guest';
+    if (!dbPromise || currentUserId !== id) {
+        currentUserId = id;
+        dbPromise = _create(id);
     }
     return dbPromise;
+};
+
+export const clearDatabase = () => {
+    dbPromise = null;
+    currentUserId = null;
 };
