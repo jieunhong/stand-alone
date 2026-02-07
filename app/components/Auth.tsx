@@ -26,7 +26,7 @@ export function Auth() {
                     email,
                     password,
                     options: {
-                        emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
+                        emailRedirectTo: process.env.NEXT_PUBLIC_SITE_URL,
                     }
                 });
                 if (error) throw error;
