@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Target } from 'lucide-react';
 import { getLocalISODate } from '../lib/date';
+import { AppIcon } from './AppIcon';
 
 interface OnboardingProps {
   onSubmit: (goal: { text: string; duration: number; startDate: string }) => void;
@@ -39,8 +40,8 @@ export function Onboarding({ onSubmit }: OnboardingProps) {
 
       <div className="relative bg-white/80 backdrop-blur-sm rounded-[32px] shadow-2xl p-8 border-2 border-white/50 w-full">
         <div className="flex items-center justify-center mb-6">
-          <div className="w-20 h-20 bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] rounded-[24px] flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform">
-            <Target className="w-10 h-10 text-white" />
+          <div className="transform hover:scale-110 transition-transform">
+            <AppIcon size={80} />
           </div>
         </div>
 
@@ -77,8 +78,8 @@ export function Onboarding({ onSubmit }: OnboardingProps) {
                   key={option.value}
                   onClick={() => setDuration(option.value)}
                   className={`py-4 px-3 rounded-[20px] transition-all duration-200 font-semibold text-sm shadow-md ${duration === option.value
-                      ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-lg scale-110 border-2 border-white'
-                      : 'bg-white/90 text-gray-600 border-2 border-gray-100 hover:border-[#A8E6A3] hover:scale-105'
+                    ? 'bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] text-white shadow-lg scale-110 border-2 border-white'
+                    : 'bg-white/90 text-gray-600 border-2 border-gray-100 hover:border-[#A8E6A3] hover:scale-105'
                     }`}
                 >
                   {option.label}
@@ -92,8 +93,8 @@ export function Onboarding({ onSubmit }: OnboardingProps) {
             onClick={handleSubmit}
             disabled={!goalText.trim() || !duration}
             className={`w-full py-4 rounded-[24px] font-bold transition-all duration-300 text-sm shadow-xl ${goalText.trim() && duration
-                ? 'bg-gradient-to-r from-[#A8E6A3] to-[#7DD87D] text-white hover:shadow-2xl hover:scale-105 active:scale-95'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              ? 'bg-gradient-to-r from-[#A8E6A3] to-[#7DD87D] text-white hover:shadow-2xl hover:scale-105 active:scale-95'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
           >
             🌱 시작하기

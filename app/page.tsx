@@ -14,6 +14,7 @@ import { Auth } from './components/Auth';
 import { Session } from '@supabase/supabase-js';
 import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { Splash } from './components/Splash';
 import {
   Dialog,
   DialogContent,
@@ -30,6 +31,7 @@ export default function Home() {
   const [dailyChecks, setDailyChecks] = useState<DailyCheckData[]>([]);
   const [currentView, setCurrentView] = useState<'daily' | 'calendar' | 'stats'>('daily');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -136,10 +138,16 @@ export default function Home() {
 
     runInit();
 
+    // Show splash for at least 2.5 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+
     return () => {
       if (goalSub) goalSub.unsubscribe();
       if (checkSub) checkSub.unsubscribe();
       if (authSubscription) authSubscription.unsubscribe();
+      clearTimeout(timer);
     };
   }, []);
 
@@ -223,14 +231,8 @@ export default function Home() {
     return prevCheck?.tomorrowResolve;
   };
 
-  if (!isLoaded) {
-    // Loading state
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="w-8 h-8 border-4 border-[#A8E6A3] border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-sm text-gray-500">데이터를 불러오는 중...</p>
-      </div>
-    );
+  if (showSplash || !isLoaded) {
+    return <Splash />;
   }
 
   if (!session) {
