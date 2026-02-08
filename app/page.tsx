@@ -88,7 +88,8 @@ export default function Home() {
                 impulse: check.impulse,
                 exercise: check.exercise,
                 score: check.score,
-                diary: check.diary
+                diary: check.diary || undefined,
+                tomorrowResolve: check.tomorrow_resolve || undefined
               });
             }
           }
@@ -174,7 +175,15 @@ export default function Home() {
       if (session) {
         const { error } = await supabase.from('daily_checks').upsert({
           user_id: session.user.id,
-          ...checkData,
+          date: checkData.date,
+          sleep: checkData.sleep,
+          nutrition: checkData.nutrition,
+          distress: checkData.distress,
+          impulse: checkData.impulse,
+          exercise: checkData.exercise,
+          score: checkData.score,
+          diary: checkData.diary,
+          tomorrow_resolve: checkData.tomorrowResolve,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'user_id,date'
@@ -204,6 +213,14 @@ export default function Home() {
     const today = new Date();
     const remaining = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(0, remaining);
+  };
+
+  const getPreviousResolve = (dateStr: string) => {
+    const date = new Date(dateStr);
+    date.setDate(date.getDate() - 1);
+    const prevDateStr = getLocalISODate(date);
+    const prevCheck = dailyChecks.find(c => c.date === prevDateStr);
+    return prevCheck?.tomorrowResolve;
   };
 
   if (!isLoaded) {
@@ -268,6 +285,7 @@ export default function Home() {
           <DailyCheck
             onSubmit={handleDailyCheckSubmit}
             existingCheck={viewingCheck}
+            previousResolve={getPreviousResolve(selectedDate || getLocalISODate())}
           />
         )}
         {currentView === 'calendar' && (
@@ -295,6 +313,7 @@ export default function Home() {
                       setSelectedDate(null);
                     }}
                     existingCheck={viewingCheck || (selectedDate ? { date: selectedDate } as any : undefined)}
+                    previousResolve={getPreviousResolve(selectedDate || getLocalISODate())}
                   />
                 </div>
               </DialogContent>

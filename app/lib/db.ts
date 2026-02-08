@@ -9,11 +9,13 @@ import {
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
 
 // Enable dev mode plugin in development
 if (process.env.NODE_ENV === 'development') {
     addRxPlugin(RxDBDevModePlugin);
 }
+addRxPlugin(RxDBMigrationSchemaPlugin);
 
 // Interfaces
 export interface DailyCheckDoc {
@@ -25,6 +27,7 @@ export interface DailyCheckDoc {
     exercise: number;
     score: number;
     diary?: string;
+    tomorrowResolve?: string;
 }
 
 export interface GoalDoc {
@@ -47,7 +50,7 @@ export type MyDatabase = RxDatabase<DatabaseCollections>;
 
 // Schemas
 const dailyCheckSchema: RxJsonSchema<DailyCheckDoc> = {
-    version: 0,
+    version: 1,
     primaryKey: 'date',
     type: 'object',
     properties: {
@@ -61,7 +64,8 @@ const dailyCheckSchema: RxJsonSchema<DailyCheckDoc> = {
         impulse: { type: 'number', minimum: 0, maximum: 5 },
         exercise: { type: 'number', minimum: 0, maximum: 5 },
         score: { type: 'number' },
-        diary: { type: 'string' }
+        diary: { type: 'string' },
+        tomorrowResolve: { type: 'string' }
     },
     required: ['date', 'sleep', 'nutrition', 'distress', 'impulse', 'exercise', 'score']
 };
@@ -95,7 +99,14 @@ const _create = async (userId: string = 'guest') => {
 
     await db.addCollections({
         daily_checks: {
-            schema: dailyCheckSchema
+            schema: dailyCheckSchema,
+            migrationStrategies: {
+                // Migration strategy from version 0 to 1
+                1: (oldDoc: any) => {
+                    oldDoc.tomorrowResolve = ''; // Initialize new field
+                    return oldDoc;
+                }
+            }
         },
         goals: {
             schema: goalSchema

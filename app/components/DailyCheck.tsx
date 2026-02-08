@@ -12,6 +12,7 @@ interface DailyCheckProps {
     exercise: number;
     score: number;
     diary?: string;
+    tomorrowResolve?: string;
   }) => void;
   existingCheck?: {
     date: string;
@@ -22,7 +23,9 @@ interface DailyCheckProps {
     exercise: number;
     score: number;
     diary?: string;
+    tomorrowResolve?: string;
   };
+  previousResolve?: string;
 }
 
 interface CheckItem {
@@ -32,13 +35,14 @@ interface CheckItem {
   reverse?: boolean;
 }
 
-export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
+export function DailyCheck({ onSubmit, existingCheck, previousResolve }: DailyCheckProps) {
   const [sleep, setSleep] = useState(0);
   const [nutrition, setNutrition] = useState(0);
   const [distress, setDistress] = useState(0);
   const [impulse, setImpulse] = useState(0);
   const [exercise, setExercise] = useState(0);
   const [diary, setDiary] = useState('');
+  const [tomorrowResolve, setTomorrowResolve] = useState('');
 
   // Use existingCheck.date or fallback to today
   const targetDate = existingCheck?.date || getLocalISODate();
@@ -51,6 +55,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
       setImpulse(existingCheck.impulse);
       setExercise(existingCheck.exercise);
       setDiary(existingCheck.diary || '');
+      setTomorrowResolve(existingCheck.tomorrowResolve || '');
     } else {
       // Reset if no existing check or just a date placeholder
       setSleep(0);
@@ -59,6 +64,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
       setImpulse(0);
       setExercise(0);
       setDiary('');
+      setTomorrowResolve('');
     }
   }, [existingCheck, targetDate]);
 
@@ -93,6 +99,7 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
       exercise,
       score: calculateScore(),
       diary: diary.trim() || undefined,
+      tomorrowResolve: tomorrowResolve.trim() || undefined,
     });
   };
 
@@ -102,6 +109,25 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
 
   return (
     <div className="flex flex-col p-5 gap-4">
+      {/* Speech Bubble for Previous Resolve */}
+      {previousResolve && (
+        <div className="relative mb-3 animate-in fade-in slide-in-from-top-4 duration-700 ease-out">
+          <div className="bg-gradient-to-br from-[#E8F5E9] to-[#C8E6C9]/30 backdrop-blur-md rounded-3xl p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-2 border-white relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-6 h-6 rounded-full bg-white/80 flex items-center justify-center shadow-sm">
+                <span className="text-xs">💌</span>
+              </div>
+              <p className="text-[11px] text-[#5A9E5A] font-bold tracking-tight uppercase">어제의 나로부터의 메시지</p>
+            </div>
+            <p className="text-[15px] text-gray-700 font-semibold leading-relaxed pl-1 italic">
+              "{previousResolve}"
+            </p>
+          </div>
+          {/* Enhanced Bubble tail */}
+          <div className="absolute -bottom-1.5 left-10 w-4 h-4 bg-white rotate-45 border-r-2 border-b-2 border-[#C8E6C9]/20 z-0 shadow-sm" />
+        </div>
+      )}
+
       {/* Date with soft background */}
       <div className="text-center bg-white/60 backdrop-blur-sm rounded-3xl py-3 px-4 shadow-sm">
         <p className="text-sm text-gray-600 font-medium">
@@ -172,11 +198,28 @@ export function DailyCheck({ onSubmit, existingCheck }: DailyCheckProps) {
           value={diary}
           onChange={(e) => setDiary(e.target.value)}
           placeholder="오늘 하루를 짧게 기록해보세요..."
-          className="w-full h-32 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
+          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
           maxLength={100}
         />
         <div className="text-xs text-gray-400 mt-2 text-right bg-gray-50 rounded-full px-3 py-1 inline-block ml-auto">
           {diary.length}/100
+        </div>
+      </div>
+
+      {/* Tomorrow Resolve Input */}
+      <div className="bg-white/70 backdrop-blur-sm rounded-3xl shadow-lg p-5 border border-white/50 flex flex-col">
+        <label className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          🌙 내일의 다짐
+        </label>
+        <textarea
+          value={tomorrowResolve}
+          onChange={(e) => setTomorrowResolve(e.target.value)}
+          placeholder="내일의 나에게 한 마디 해주세요..."
+          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
+          maxLength={100}
+        />
+        <div className="text-xs text-gray-400 mt-2 text-right bg-gray-50 rounded-full px-3 py-1 inline-block ml-auto">
+          {tomorrowResolve.length}/100
         </div>
       </div>
 
