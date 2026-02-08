@@ -9,7 +9,9 @@ export function Splash() {
             <div className="relative flex flex-col items-center">
                 {/* Icon with scaling animation */}
                 <div className="animate-in zoom-in-50 duration-1000 ease-out fill-mode-forwards">
-                    <AppIcon size={120} className="shadow-2xl rounded-[32px] animate-bounce-slow" />
+                    <div className="relative shadow-2xl rounded-[32px] overflow-hidden animate-bounce-slow">
+                        <AppIcon size={120} />
+                    </div>
                 </div>
 
                 {/* Text content with delayed entry */}

@@ -28,7 +28,7 @@ export function Onboarding({ onSubmit }: OnboardingProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex items-center justify-center px-5 max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex items-center justify-center px-5 max-w-md mx-auto pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
       {/* Dotted pattern background */}
       <div
         className="absolute inset-0 opacity-20 pointer-events-none"

@@ -257,8 +257,8 @@ export default function Home() {
   return (
     <div className="h-dvh bg-gradient-to-br from-[#F5F5F5] via-[#F8F9FA] to-[#E8F5E9] flex flex-col max-w-md mx-auto">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E0E0E0]/50 flex-shrink-0 shadow-sm">
-        <div className="px-5 py-4">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-[#E0E0E0]/50 flex-shrink-0 shadow-sm safe-top">
+        <div className="px-5 py-2">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0 pr-3">
               <div className="flex items-center gap-2">
@@ -331,7 +331,7 @@ export default function Home() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="bg-white/90 backdrop-blur-sm border-t border-[#E0E0E0]/50 flex-shrink-0 shadow-lg">
+      <nav className="bg-white/90 backdrop-blur-sm border-t border-[#E0E0E0]/50 flex-shrink-0 shadow-lg safe-bottom">
         <div className="grid grid-cols-3 gap-1 p-2">
           <button
             onClick={() => {
