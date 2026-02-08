@@ -146,16 +146,19 @@ export function ProgressCalendar({ goal, dailyChecks, onSelectDate }: ProgressCa
               return <div key={`empty-${index}`} className="aspect-square" />;
             }
 
+            const dateStr = getLocalISODate(day);
             const score = getScoreForDate(day);
             const withinPeriod = isWithinGoalPeriod(day);
             const today = isToday(day);
             const isFuture = day > new Date();
+            const isBeforeStart = dateStr < goal.startDate;
+            const isDisabled = isFuture || isBeforeStart;
 
             return (
               <div
                 key={day.toISOString()}
-                onClick={() => !isFuture && onSelectDate(getLocalISODate(day))}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${isFuture ? 'cursor-default opacity-40' : 'cursor-pointer hover:scale-105 hover:shadow-md'
+                onClick={() => !isDisabled && onSelectDate(dateStr)}
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center transition-all duration-200 shadow-sm ${isDisabled ? 'cursor-default opacity-40' : 'cursor-pointer hover:scale-105 hover:shadow-md'
                   } ${score > 0 ? getColorIntensity(score) : (withinPeriod ? 'bg-[#F5F5F5]' : 'bg-transparent')
                   } ${today ? 'ring-4 ring-[#7DD87D] ring-offset-2 scale-110' : ''}`}
               >
