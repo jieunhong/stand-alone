@@ -81,7 +81,7 @@ export function Auth() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 placeholder="example@email.com"
-                                className="w-full pl-11 pr-4 py-3.5 bg-white/90 border-2 border-gray-100 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent text-sm transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-white/90 border-2 border-gray-100 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent text-base transition-all"
                             />
                         </div>
                     </div>
@@ -96,7 +96,7 @@ export function Auth() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 placeholder="••••••••"
-                                className="w-full pl-11 pr-4 py-3.5 bg-white/90 border-2 border-gray-100 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent text-sm transition-all"
+                                className="w-full pl-11 pr-4 py-3.5 bg-white/90 border-2 border-gray-100 rounded-[20px] focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent text-base transition-all"
                             />
                         </div>
                     </div>

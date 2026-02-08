@@ -198,7 +198,7 @@ export function DailyCheck({ onSubmit, existingCheck, previousResolve }: DailyCh
           value={diary}
           onChange={(e) => setDiary(e.target.value)}
           placeholder="오늘 하루를 짧게 기록해보세요..."
-          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
+          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-base placeholder:text-gray-400"
           maxLength={100}
         />
         <div className="text-xs text-gray-400 mt-2 text-right bg-gray-50 rounded-full px-3 py-1 inline-block ml-auto">
@@ -215,7 +215,7 @@ export function DailyCheck({ onSubmit, existingCheck, previousResolve }: DailyCh
           value={tomorrowResolve}
           onChange={(e) => setTomorrowResolve(e.target.value)}
           placeholder="내일의 나에게 한 마디 해주세요..."
-          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-sm placeholder:text-gray-400"
+          className="w-full h-24 px-4 py-3 bg-white/80 border-2 border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-[#A8E6A3] focus:border-transparent resize-none text-base placeholder:text-gray-400"
           maxLength={100}
         />
         <div className="text-xs text-gray-400 mt-2 text-right bg-gray-50 rounded-full px-3 py-1 inline-block ml-auto">
