@@ -75,6 +75,27 @@
 
 ---
 
+## 📱 Mobile App (Capacitor)
+
+이 서비스는 Capacitor를 통해 iOS 및 Android 앱으로 빌드할 수 있습니다.
+
+1. **빌드 및 동기화**
+   ```bash
+   npm run mobile:sync
+   ```
+
+2. **iOS 시뮬레이터/앱 실행** (Xcode 필요)
+   ```bash
+   npm run mobile:open:ios
+   ```
+
+3. **Android Studio/앱 실행** (Android Studio 필요)
+   ```bash
+   npm run mobile:open:android
+   ```
+
+---
+
 ## 🎨 Design Philosophy
 Stand-Alone은 사용자에게 압박을 주지 않는 **'다정한 디자인'**을 지향합니다.  
 부드러운 파스텔 그린 톤과 글래모피즘(Glassmorphism) 요소를 사용하여, 매일 들어오고 싶은 편안한 공간을 제공합니다.
