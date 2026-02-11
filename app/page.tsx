@@ -25,6 +25,7 @@ import { Achievements } from './components/Achievements';
 import { CelebrationDialog } from './components/CelebrationDialog';
 import { Trophy } from 'lucide-react';
 import { getAchievements } from './lib/achievements';
+import { type AchievementDefinitionDoc } from './lib/db';
 
 // Type definitions to match component props
 export type Goal = Omit<GoalDoc, 'id'>;
@@ -38,6 +39,7 @@ export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [achievementDefinitions, setAchievementDefinitions] = useState<AchievementDefinitionDoc[]>([]);
 
   // Achievements state
   const [celebrationData, setCelebrationData] = useState<{
@@ -60,6 +62,7 @@ export default function Home() {
     let goalSub: Subscription;
     let checkSub: Subscription;
     let authSubscription: any;
+    let defSub: Subscription;
 
     const initDB = async (currentSession: Session | null) => {
       try {
@@ -119,6 +122,26 @@ export default function Home() {
               });
             }
           }
+
+          // Fetch Achievement Definitions
+          const { data: defData, error: defError } = await supabase
+            .from('achievement_definitions')
+            .select('*')
+            .order('id', { ascending: false });
+
+          if (defData && !defError) {
+            for (const def of defData) {
+              await db.achievement_definitions.upsert({
+                id: def.id,
+                title: def.title,
+                description: def.description,
+                icon: def.icon,
+                type: def.type,
+                targetValue: def.target_value,
+                displayOrder: def.display_order
+              });
+            }
+          }
         }
 
         // Subscribe to goal changes
@@ -138,6 +161,13 @@ export default function Home() {
         checkSub = db.daily_checks.find().$.subscribe(docs => {
           const checks = docs.map(doc => doc.toJSON());
           setDailyChecks(checks);
+        });
+
+        // Subscribe to Definitions
+        defSub = db.achievement_definitions.find({
+          sort: [{ displayOrder: 'desc' }]
+        }).$.subscribe(docs => {
+          setAchievementDefinitions(docs.map(d => d.toJSON()));
         });
 
         setIsLoaded(true);
@@ -171,20 +201,21 @@ export default function Home() {
       if (goalSub) goalSub.unsubscribe();
       if (checkSub) checkSub.unsubscribe();
       if (authSubscription) authSubscription.unsubscribe();
+      if (defSub) defSub.unsubscribe();
       clearTimeout(timer);
     };
   }, []);
 
   // Global achievement monitor
   useEffect(() => {
-    if (!isLoaded || !dailyChecks.length) return;
+    if (!isLoaded || !dailyChecks.length || !achievementDefinitions.length) return;
 
     const runMonitor = async () => {
       const db = await getDatabase(session?.user.id);
       const unlockedDocs = await db.unlocked_achievements.find().exec();
       const unlockedIds = unlockedDocs.map(d => d.id);
 
-      const allAchievements = getAchievements(dailyChecks, goal);
+      const allAchievements = getAchievements(dailyChecks, goal, achievementDefinitions);
       const newUnlockedAchievements = allAchievements.filter(
         a => a.unlocked && !unlockedIds.includes(a.id)
       );
@@ -220,7 +251,7 @@ export default function Home() {
     };
 
     runMonitor();
-  }, [dailyChecks, isLoaded, goal, session]);
+  }, [dailyChecks, isLoaded, goal, session, achievementDefinitions]);
 
   const handleGoalSubmit = async (goalData: Goal) => {
     try {
@@ -403,6 +434,7 @@ export default function Home() {
           <Achievements
             dailyChecks={dailyChecks}
             goal={goal}
+            achievementDefinitions={achievementDefinitions}
           />
         )}
       </main>

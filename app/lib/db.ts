@@ -42,15 +42,27 @@ export interface AchievementDoc {
     unlockedAt: string;
 }
 
+export interface AchievementDefinitionDoc {
+    id: string;
+    title: string;
+    description: string;
+    icon: string;
+    type: 'streak' | 'score' | 'milestone';
+    targetValue: number;
+    displayOrder: number;
+}
+
 // Collections Types
 export type DailyCheckCollection = RxCollection<DailyCheckDoc>;
 export type GoalCollection = RxCollection<GoalDoc>;
 export type AchievementCollection = RxCollection<AchievementDoc>;
+export type AchievementDefinitionCollection = RxCollection<AchievementDefinitionDoc>;
 
 export type DatabaseCollections = {
     daily_checks: DailyCheckCollection;
     goals: GoalCollection;
     unlocked_achievements: AchievementCollection;
+    achievement_definitions: AchievementDefinitionCollection;
 }
 
 export type MyDatabase = RxDatabase<DatabaseCollections>;
@@ -101,6 +113,22 @@ const achievementSchema: RxJsonSchema<AchievementDoc> = {
     required: ['id', 'unlockedAt']
 };
 
+const achievementDefinitionSchema: RxJsonSchema<AchievementDefinitionDoc> = {
+    version: 1,
+    primaryKey: 'id',
+    type: 'object',
+    properties: {
+        id: { type: 'string', maxLength: 100 },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        icon: { type: 'string' },
+        type: { type: 'string' },
+        targetValue: { type: 'number' },
+        displayOrder: { type: 'number' }
+    },
+    required: ['id', 'title', 'description', 'icon', 'type', 'targetValue', 'displayOrder']
+};
+
 let dbPromise: Promise<MyDatabase> | null = null;
 let currentUserId: string | null = null;
 
@@ -131,6 +159,15 @@ const _create = async (userId: string = 'guest') => {
         },
         unlocked_achievements: {
             schema: achievementSchema
+        },
+        achievement_definitions: {
+            schema: achievementDefinitionSchema,
+            migrationStrategies: {
+                1: (oldDoc: any) => {
+                    oldDoc.displayOrder = 0;
+                    return oldDoc;
+                }
+            }
         }
     });
 

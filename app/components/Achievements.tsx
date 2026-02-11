@@ -8,20 +8,23 @@ import {
     getAchievements,
     Achievement
 } from '../lib/achievements';
+import { AchievementDefinitionDoc } from '../lib/db';
 
 interface AchievementsProps {
     dailyChecks: DailyCheckData[];
     goal: Goal;
+    achievementDefinitions: AchievementDefinitionDoc[];
 }
 
 export function Achievements({
     dailyChecks,
     goal,
+    achievementDefinitions,
 }: AchievementsProps) {
     const consecutiveDays = getConsecutiveDays(dailyChecks);
     const averageScore = getAverageScore(dailyChecks);
     const totalChecks = dailyChecks.length;
-    const achievements = getAchievements(dailyChecks, goal);
+    const achievements = getAchievements(dailyChecks, goal, achievementDefinitions);
 
     const unlockedCount = achievements.filter(a => a.unlocked).length;
 

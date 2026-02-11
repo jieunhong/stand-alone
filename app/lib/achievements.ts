@@ -80,84 +80,46 @@ export const getRecentAverageScore = (dailyChecks: DailyCheckData[]) => {
     return total / recentChecks.length;
 };
 
-export const getAchievements = (dailyChecks: DailyCheckData[], goal: Goal | null): Achievement[] => {
+import { AchievementDefinitionDoc } from './db';
+
+export const getAchievements = (
+    dailyChecks: DailyCheckData[],
+    goal: Goal | null,
+    definitions: AchievementDefinitionDoc[]
+): Achievement[] => {
     const consecutiveDays = getConsecutiveDays(dailyChecks);
     const averageScore = getAverageScore(dailyChecks);
     const recentAverage = getRecentAverageScore(dailyChecks);
     const totalChecks = dailyChecks.length;
 
-    return [
-        {
-            id: 'streak_3',
-            title: '첫 발걸음',
-            description: '3일 연속 체크인',
-            icon: 'flame',
-            unlocked: consecutiveDays >= 3,
-            type: 'streak',
-        },
-        {
-            id: 'streak_7',
-            title: '한 주 완주',
-            description: '7일 연속 체크인',
-            icon: 'star',
-            unlocked: consecutiveDays >= 7,
-            type: 'streak',
-        },
-        {
-            id: 'streak_14',
-            title: '꾸준함의 힘',
-            description: '14일 연속 체크인',
-            icon: 'trophy',
-            unlocked: consecutiveDays >= 14,
-            type: 'streak',
-        },
-        {
-            id: 'streak_30',
-            title: '한 달의 여정',
-            description: '30일 연속 체크인',
-            icon: 'award',
-            unlocked: consecutiveDays >= 30,
-            type: 'streak',
-        },
-        {
-            id: 'score_good',
-            title: '긍정적인 변화',
-            description: '평균 70점 이상 유지',
-            icon: 'trendingUp',
-            unlocked: averageScore >= 70,
-            type: 'score',
-        },
-        {
-            id: 'score_great',
-            title: '안정적인 일상',
-            description: '평균 80점 이상 유지',
-            icon: 'sparkles',
-            unlocked: averageScore >= 80,
-            type: 'score',
-        },
-        {
-            id: 'recent_excellent',
-            title: '최근 컨디션 최고',
-            description: '최근 7일 평균 80점 이상',
-            icon: 'zap',
-            unlocked: recentAverage >= 80,
-            type: 'score',
-        },
-        {
-            id: 'milestone_10',
-            title: '꾸준한 기록',
-            description: '10일 기록 달성',
-            icon: 'heart',
-            unlocked: totalChecks >= 10,
-            type: 'milestone',
-        },
-        {
-            id: 'milestone_30',
-            title: '한 달 성장',
-            description: '30일 기록 달성',
-            icon: 'trophy',
-            unlocked: totalChecks >= 30,
-            type: 'milestone',
-        },
-    ];
+    return definitions.map(def => {
+        let unlocked = false;
+
+        // Logical check based on formula in ID or static type
+        const typePrefix = def.id.split('_')[0];
+
+        switch (typePrefix) {
+            case 'streak':
+                unlocked = consecutiveDays >= def.targetValue;
+                break;
+            case 'score':
+                unlocked = averageScore >= def.targetValue;
+                break;
+            case 'recent':
+                unlocked = recentAverage >= def.targetValue;
+                break;
+            case 'milestone':
+                unlocked = totalChecks >= def.targetValue;
+                break;
+        }
+
+        return {
+            id: def.id,
+            title: def.title,
+            description: def.description,
+            icon: def.icon,
+            type: def.type,
+            unlocked
+        };
+    });
 };
