@@ -37,13 +37,20 @@ export interface GoalDoc {
     startDate: string;
 }
 
+export interface AchievementDoc {
+    id: string; // achievement_id
+    unlockedAt: string;
+}
+
 // Collections Types
 export type DailyCheckCollection = RxCollection<DailyCheckDoc>;
 export type GoalCollection = RxCollection<GoalDoc>;
+export type AchievementCollection = RxCollection<AchievementDoc>;
 
 export type DatabaseCollections = {
     daily_checks: DailyCheckCollection;
     goals: GoalCollection;
+    unlocked_achievements: AchievementCollection;
 }
 
 export type MyDatabase = RxDatabase<DatabaseCollections>;
@@ -83,6 +90,17 @@ const goalSchema: RxJsonSchema<GoalDoc> = {
     required: ['id', 'text', 'duration', 'startDate']
 };
 
+const achievementSchema: RxJsonSchema<AchievementDoc> = {
+    version: 0,
+    primaryKey: 'id',
+    type: 'object',
+    properties: {
+        id: { type: 'string', maxLength: 100 },
+        unlockedAt: { type: 'string' }
+    },
+    required: ['id', 'unlockedAt']
+};
+
 let dbPromise: Promise<MyDatabase> | null = null;
 let currentUserId: string | null = null;
 
@@ -110,6 +128,9 @@ const _create = async (userId: string = 'guest') => {
         },
         goals: {
             schema: goalSchema
+        },
+        unlocked_achievements: {
+            schema: achievementSchema
         }
     });
 

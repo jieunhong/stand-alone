@@ -21,6 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./components/ui/dialog";
+import { Achievements } from './components/Achievements';
+import { CelebrationDialog } from './components/CelebrationDialog';
+import { Trophy } from 'lucide-react';
+import { getAchievements } from './lib/achievements';
 
 // Type definitions to match component props
 export type Goal = Omit<GoalDoc, 'id'>;
@@ -29,11 +33,17 @@ export type DailyCheckData = DailyCheckDoc;
 export default function Home() {
   const [goal, setGoal] = useState<Goal | null>(null);
   const [dailyChecks, setDailyChecks] = useState<DailyCheckData[]>([]);
-  const [currentView, setCurrentView] = useState<'daily' | 'calendar' | 'stats'>('daily');
+  const [currentView, setCurrentView] = useState<'daily' | 'calendar' | 'stats' | 'achievements'>('daily');
   const [isLoaded, setIsLoaded] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // Achievements state
+  const [celebrationData, setCelebrationData] = useState<{
+    show: boolean;
+    achievement: { title: string; description: string; icon: string } | null;
+  }>({ show: false, achievement: null });
 
   useEffect(() => {
     const initAuth = async () => {
@@ -95,6 +105,20 @@ export default function Home() {
               });
             }
           }
+
+          const { data: achievementData, error: achievementError } = await supabase
+            .from('unlocked_achievements')
+            .select('*')
+            .eq('user_id', currentSession.user.id);
+
+          if (achievementData && !achievementError) {
+            for (const ach of achievementData) {
+              await db.unlocked_achievements.upsert({
+                id: ach.achievement_id,
+                unlockedAt: ach.unlocked_at
+              });
+            }
+          }
         }
 
         // Subscribe to goal changes
@@ -150,6 +174,53 @@ export default function Home() {
       clearTimeout(timer);
     };
   }, []);
+
+  // Global achievement monitor
+  useEffect(() => {
+    if (!isLoaded || !dailyChecks.length) return;
+
+    const runMonitor = async () => {
+      const db = await getDatabase(session?.user.id);
+      const unlockedDocs = await db.unlocked_achievements.find().exec();
+      const unlockedIds = unlockedDocs.map(d => d.id);
+
+      const allAchievements = getAchievements(dailyChecks, goal);
+      const newUnlockedAchievements = allAchievements.filter(
+        a => a.unlocked && !unlockedIds.includes(a.id)
+      );
+
+      if (newUnlockedAchievements.length > 0) {
+        const firstNew = newUnlockedAchievements[0];
+
+        // 1. Show celebration
+        setCelebrationData({
+          show: true,
+          achievement: {
+            title: firstNew.title,
+            description: firstNew.description,
+            icon: firstNew.icon,
+          },
+        });
+
+        // 2. Save to RxDB
+        await db.unlocked_achievements.upsert({
+          id: firstNew.id,
+          unlockedAt: new Date().toISOString()
+        });
+
+        // 3. Save to Supabase
+        if (session) {
+          await supabase.from('unlocked_achievements').upsert({
+            user_id: session.user.id,
+            achievement_id: firstNew.id,
+            unlocked_at: new Date().toISOString()
+          }, { onConflict: 'user_id,achievement_id' });
+        }
+      }
+    };
+
+    runMonitor();
+  }, [dailyChecks, isLoaded, goal, session]);
 
   const handleGoalSubmit = async (goalData: Goal) => {
     try {
@@ -328,11 +399,17 @@ export default function Home() {
             goal={goal}
           />
         )}
+        {currentView === 'achievements' && (
+          <Achievements
+            dailyChecks={dailyChecks}
+            goal={goal}
+          />
+        )}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="bg-white/90 backdrop-blur-sm border-t border-[#E0E0E0]/50 flex-shrink-0 shadow-lg safe-bottom">
-        <div className="grid grid-cols-3 gap-1 p-2">
+        <div className="grid grid-cols-4 gap-1 p-2">
           <button
             onClick={() => {
               setSelectedDate(null);
@@ -366,8 +443,25 @@ export default function Home() {
             <BarChart3 className="w-5 h-5 mb-1" />
             <span className="text-xs font-medium">통계</span>
           </button>
+          <button
+            onClick={() => setCurrentView('achievements')}
+            className={`flex flex-col items-center py-3 px-2 rounded-2xl transition-all ${currentView === 'achievements'
+              ? 'text-white bg-gradient-to-br from-[#A8E6A3] to-[#7DD87D] shadow-lg scale-105'
+              : 'text-gray-400 hover:bg-[#F5F5F5]'
+              }`}
+          >
+            <Trophy className="w-5 h-5 mb-1" />
+            <span className="text-xs font-medium">업적</span>
+          </button>
         </div>
       </nav>
+
+      {/* Celebration Dialog */}
+      <CelebrationDialog
+        open={celebrationData.show}
+        onClose={() => setCelebrationData({ ...celebrationData, show: false })}
+        achievement={celebrationData.achievement}
+      />
     </div>
   );
 }
