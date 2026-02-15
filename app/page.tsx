@@ -15,6 +15,7 @@ import { Session } from '@supabase/supabase-js';
 import { LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import { Splash } from './components/Splash';
+import { OnboardingTour } from './components/OnboardingTour';
 import {
   Dialog,
   DialogContent,
@@ -40,6 +41,7 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [achievementDefinitions, setAchievementDefinitions] = useState<AchievementDefinitionDoc[]>([]);
+  const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
   // Achievements state
   const [celebrationData, setCelebrationData] = useState<{
@@ -253,6 +255,19 @@ export default function Home() {
     runMonitor();
   }, [dailyChecks, isLoaded, goal, session, achievementDefinitions]);
 
+  // Check if user has completed onboarding tour
+  useEffect(() => {
+    if (goal && isLoaded && !showSplash) {
+      const tourCompleted = localStorage.getItem('onboarding_tour_completed');
+      if (!tourCompleted) {
+        // Small delay to let the main UI render first
+        setTimeout(() => {
+          setShowOnboardingTour(true);
+        }, 500);
+      }
+    }
+  }, [goal, isLoaded, showSplash]);
+
   const handleGoalSubmit = async (goalData: Goal) => {
     try {
       if (session) {
@@ -351,6 +366,17 @@ export default function Home() {
     setGoal(null);
     setDailyChecks([]);
     toast.success('로그아웃되었습니다.');
+  };
+
+  const handleTourComplete = () => {
+    localStorage.setItem('onboarding_tour_completed', 'true');
+    setShowOnboardingTour(false);
+    toast.success('가이드를 완료했습니다! 🎉');
+  };
+
+  const handleTourSkip = () => {
+    localStorage.setItem('onboarding_tour_completed', 'true');
+    setShowOnboardingTour(false);
   };
 
   const remainingDays = getRemainingDays();
@@ -494,6 +520,14 @@ export default function Home() {
         onClose={() => setCelebrationData({ ...celebrationData, show: false })}
         achievement={celebrationData.achievement}
       />
+
+      {/* Onboarding Tour */}
+      {showOnboardingTour && (
+        <OnboardingTour
+          onComplete={handleTourComplete}
+          onSkip={handleTourSkip}
+        />
+      )}
     </div>
   );
 }
