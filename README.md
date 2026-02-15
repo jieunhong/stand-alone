@@ -79,6 +79,39 @@
 
 이 서비스는 Capacitor를 통해 iOS 및 Android 앱으로 빌드할 수 있습니다.
 
+### 🌐 앱에서 띄울 웹 주소 설정
+
+`capacitor.config.ts` 파일에서 `APP_URL` 변수를 수정하여 앱에서 로드할 웹 주소를 설정할 수 있습니다:
+
+```typescript
+// capacitor.config.ts
+const APP_URL = 'https://your-domain.com'; // 여기에 원하는 웹 주소 입력
+```
+
+**시나리오별 설정:**
+
+1. **로컬 개발 서버 사용**
+   ```typescript
+   const APP_URL = 'http://localhost:3000';
+   ```
+   - 개발 서버(`npm run dev`)가 실행 중이어야 합니다
+   - 실제 기기에서는 컴퓨터의 IP 주소 사용 (예: `http://192.168.0.10:3000`)
+
+2. **배포된 웹앱 사용**
+   ```typescript
+   const APP_URL = 'https://stand-alone.bbubbu.me';
+   ```
+   - 웹앱이 이미 배포되어 있어야 합니다
+   - HTTPS 권장
+
+3. **네이티브 빌드 사용** (앱 내장)
+   ```typescript
+   const APP_URL = undefined;
+   ```
+   - `npm run mobile:sync` 실행 시 `out` 폴더의 정적 파일을 앱에 포함
+
+### 🔧 빌드 및 실행
+
 1. **빌드 및 동기화**
    ```bash
    npm run mobile:sync
@@ -93,6 +126,8 @@
    ```bash
    npm run mobile:open:android
    ```
+
+**💡 Tip**: URL을 변경한 후에는 반드시 `npm run mobile:sync`를 다시 실행하여 앱에 변경사항을 적용하세요.
 
 ---
 
