@@ -9,22 +9,33 @@ import {
     Achievement
 } from '../lib/achievements';
 import { AchievementDefinitionDoc } from '../lib/db';
+import { AchievementDoc } from '../lib/db';
 
 interface AchievementsProps {
     dailyChecks: DailyCheckData[];
     goal: Goal;
     achievementDefinitions: AchievementDefinitionDoc[];
+    achievements: AchievementDoc[];
 }
 
 export function Achievements({
     dailyChecks,
     goal,
     achievementDefinitions,
+    achievements: dbAchievements,
 }: AchievementsProps) {
     const consecutiveDays = getConsecutiveDays(dailyChecks);
     const averageScore = getAverageScore(dailyChecks);
     const totalChecks = dailyChecks.length;
-    const achievements = getAchievements(dailyChecks, goal, achievementDefinitions);
+
+    // 기존 로직으로 계산된 업적 목록
+    const calculatedAchievements = getAchievements(dailyChecks, goal, achievementDefinitions);
+
+    // DB에 저장된 달성 기록(dbAchievements)에 포함되어 있으면 unlocked를 true로 유지
+    const achievements = calculatedAchievements.map(a => ({
+        ...a,
+        unlocked: a.unlocked || dbAchievements.some(dbAch => dbAch.id === a.id)
+    }));
 
     const unlockedCount = achievements.filter(a => a.unlocked).length;
 

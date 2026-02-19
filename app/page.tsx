@@ -6,7 +6,7 @@ import { DailyCheck } from './components/DailyCheck';
 import { ProgressCalendar } from './components/ProgressCalendar';
 import { Statistics } from './components/Statistics';
 import { Menu, Calendar, BarChart3, CheckCircle } from 'lucide-react';
-import { getDatabase, clearDatabase, type DailyCheckDoc, type GoalDoc } from './lib/db';
+import { getDatabase, clearDatabase, type DailyCheckDoc, type GoalDoc, AchievementDoc } from './lib/db';
 import { Subscription } from 'rxjs';
 import { getLocalISODate } from './lib/date';
 import { supabase } from './lib/supabase';
@@ -41,6 +41,7 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [achievementDefinitions, setAchievementDefinitions] = useState<AchievementDefinitionDoc[]>([]);
+  const [achievements, setAchievements] = useState<AchievementDoc[]>([]);
   const [showOnboardingTour, setShowOnboardingTour] = useState(false);
 
   // Achievements state
@@ -65,6 +66,7 @@ export default function Home() {
     let checkSub: Subscription;
     let authSubscription: any;
     let defSub: Subscription;
+    let achSub: Subscription;
 
     const initDB = async (currentSession: Session | null) => {
       try {
@@ -170,6 +172,10 @@ export default function Home() {
           sort: [{ displayOrder: 'desc' }]
         }).$.subscribe(docs => {
           setAchievementDefinitions(docs.map(d => d.toJSON()));
+        });
+
+        achSub = db.unlocked_achievements.find().$.subscribe(docs => {
+          setAchievements(docs.map(d => d.toJSON()));
         });
 
         setIsLoaded(true);
@@ -461,6 +467,7 @@ export default function Home() {
             dailyChecks={dailyChecks}
             goal={goal}
             achievementDefinitions={achievementDefinitions}
+            achievements={achievements}
           />
         )}
       </main>
