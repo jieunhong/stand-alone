@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, Award, Target } from 'lucide-react';
 
@@ -11,6 +11,8 @@ interface StatisticsProps {
     impulse: number;
     exercise: number;
     score: number;
+    diary?: string;
+    tomorrowResolve?: string;
   }>;
   goal: {
     text: string;
@@ -21,6 +23,9 @@ interface StatisticsProps {
 
 export function Statistics({ dailyChecks, goal }: StatisticsProps) {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
+  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+
 
   const getWeeklyData = () => {
     const now = new Date();
@@ -100,7 +105,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
     };
   };
 
-  const categoryAverages = calculateCategoryAverages();
+  const categoryAverages = React.useMemo(() => calculateCategoryAverages(), [dailyChecks]);
 
   // Fix totalDays calculation and completion rate
   const getGoalDays = () => {
@@ -112,11 +117,17 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
     return Math.max(1, diff);
   };
 
-  const totalDays = getGoalDays();
-  const completionRate = dailyChecks.length > 0 ? Math.round((dailyChecks.length / totalDays) * 100) : 0;
-  const averageScore = dailyChecks.length > 0
-    ? Math.round(dailyChecks.reduce((sum, check) => sum + check.score, 0) / dailyChecks.length)
-    : 0;
+  const totalDays = React.useMemo(() => getGoalDays(), [goal]);
+  const completionRate = React.useMemo(() =>
+    dailyChecks.length > 0 ? Math.round((dailyChecks.length / totalDays) * 100) : 0,
+    [dailyChecks.length, totalDays]
+  );
+  const averageScore = React.useMemo(() =>
+    dailyChecks.length > 0
+      ? Math.round(dailyChecks.reduce((sum, check) => sum + check.score, 0) / dailyChecks.length)
+      : 0,
+    [dailyChecks]
+  );
 
   const calculateStreak = () => {
     if (dailyChecks.length === 0) return 0;
@@ -157,7 +168,7 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
     return streak;
   };
 
-  const streak = calculateStreak();
+  const streak = React.useMemo(() => calculateStreak(), [dailyChecks]);
 
   const categoryLabels = {
     sleep: '😴 수면',
@@ -166,6 +177,88 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
     impulse: '🛍️ 충동조절',
     exercise: '🚶 운동',
   };
+
+  const dataKey = React.useMemo(() => JSON.stringify({
+    checksLen: dailyChecks.length,
+    lastCheck: dailyChecks[dailyChecks.length - 1]?.date,
+    goal: goal.text
+  }), [dailyChecks, goal]);
+
+  useEffect(() => {
+    if (dailyChecks.length > 0) {
+      const abortController = new AbortController();
+      let isFirstChunk = true;
+
+      const getAiFeedback = async () => {
+        // 1. 캐시 확인 (429 에러 방지 및 사용자 경험 개선)
+        const cachedFeedback = sessionStorage.getItem(`ai_feedback_${dataKey}`);
+        if (cachedFeedback) {
+          setAiFeedback(cachedFeedback);
+          setIsLoadingAi(false);
+          return;
+        }
+
+        setIsLoadingAi(true);
+        setAiFeedback('');
+        let accumulatedFeedback = '';
+
+        try {
+          const response = await fetch('/api/ai/feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dailyChecks,
+              goal,
+              averages: categoryAverages,
+              streak,
+              completionRate
+            }),
+            signal: abortController.signal
+          });
+
+          if (!response.body) throw new Error('No response body');
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let done = false;
+
+          while (!done) {
+            const { value, done: doneReading } = await reader.read();
+            done = doneReading;
+
+            if (value) {
+              const chunkValue = decoder.decode(value, { stream: true });
+              accumulatedFeedback += chunkValue;
+              if (isFirstChunk) {
+                setIsLoadingAi(false);
+                isFirstChunk = false;
+              }
+              setAiFeedback(prev => (prev || '') + chunkValue);
+            }
+          }
+
+          if (accumulatedFeedback) {
+            sessionStorage.setItem(`ai_feedback_${dataKey}`, accumulatedFeedback);
+          }
+        } catch (error: any) {
+          if (error.name === 'AbortError') return;
+          console.error('AI 피드백 생성 실패:', error);
+          if (!accumulatedFeedback) {
+            setAiFeedback('분석 정보를 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요.');
+          }
+        } finally {
+          setIsLoadingAi(false);
+        }
+      };
+
+      getAiFeedback();
+
+      return () => {
+        abortController.abort();
+      };
+    }
+  }, [dataKey]);
+
 
   return (
     <div className="p-5 space-y-4">
@@ -296,63 +389,32 @@ export function Statistics({ dailyChecks, goal }: StatisticsProps) {
               <span className="text-base text-gray-400">💡</span>
               <p className="leading-relaxed">아직 데이터가 없어요. 자립 여정의 첫 걸음을 기록해보세요!</p>
             </div>
+          ) : (isLoadingAi && !aiFeedback) ? (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7DD87D]"></div>
+              <p className="ml-3 text-xs text-gray-500">AI가 당신의 기록을 분석중이에요...</p>
+            </div>
+          ) : aiFeedback ? (
+            <div className="flex items-start gap-2.5 p-4 bg-gradient-to-br from-[#A8E6A3]/10 to-[#7DD87D]/10 rounded-2xl border border-[#A8E6A3]/20 shadow-sm">
+              <span className="text-lg">✨</span>
+              <div className="flex flex-col gap-1 w-full">
+                <p className="leading-relaxed text-gray-700 text-sm whitespace-pre-wrap">{aiFeedback}</p>
+                {isLoadingAi && (
+                  <div className="flex gap-1 mt-2">
+                    <div className="w-1.5 h-1.5 bg-[#7DD87D] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 bg-[#7DD87D] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 bg-[#7DD87D] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                )}
+                <span className="text-[10px] text-gray-400 mt-1 italic">Powered by Gemini & LangChain</span>
+              </div>
+            </div>
           ) : (
-            <>
-              {completionRate >= 80 ? (
-                <div className="flex items-start gap-2.5 p-3 bg-[#A8E6A3]/10 rounded-2xl border border-[#A8E6A3]/20 shadow-sm">
-                  <span className="text-[#7DD87D] text-sm">✨</span>
-                  <p className="leading-relaxed text-gray-700 font-medium font-medium">기록 장인! {completionRate}%의 매우 높은 기록률을 보이고 있어요.</p>
-                </div>
-              ) : completionRate <= 50 ? (
-                <div className="flex items-start gap-2.5 p-3 bg-orange-50 rounded-2xl border border-orange-100 shadow-sm">
-                  <span className="text-orange-400 text-sm">💡</span>
-                  <p className="leading-relaxed text-gray-700 font-medium">최근 기록이 조금 뜸해졌네요. 다시 페이스를 찾아 기록을 이어가볼까요?</p>
-                </div>
-              ) : null}
-
-              {averageScore >= 80 ? (
-                <div className="flex items-start gap-2.5 p-3 bg-[#7DD87D]/10 rounded-2xl border border-[#7DD87D]/20 shadow-sm">
-                  <span className="text-[#7DD87D] text-sm">💪</span>
-                  <p className="leading-relaxed text-gray-700 font-medium">매우 안정적이에요. 지금처럼 자신을 잘 돌봐주세요.</p>
-                </div>
-              ) : averageScore < 60 ? (
-                <div className="flex items-start gap-2.5 p-3 bg-red-50 rounded-2xl border border-red-100 shadow-sm">
-                  <span className="text-red-400 text-sm">💊</span>
-                  <p className="leading-relaxed text-gray-700 font-medium">평균 점수가 낮아졌어요. 어디가 불편한지 일기를 통해 들여다볼까요?</p>
-                </div>
-              ) : null}
-
-              {categoryAverages && (
-                <>
-                  {parseFloat(categoryAverages.sleep) < 3 && (
-                    <div className="flex items-start gap-2.5 p-3 bg-blue-50 rounded-2xl border border-blue-100 shadow-sm">
-                      <span className="text-blue-400 text-sm">💤</span>
-                      <p className="leading-relaxed text-gray-700 font-medium">수면 점수가 낮아요. 정해진 시간에 눕는 습관부터 시작해봐요.</p>
-                    </div>
-                  )}
-                  {parseFloat(categoryAverages.distress) < 3 && (
-                    <div className="flex items-start gap-2.5 p-3 bg-purple-50 rounded-2xl border border-purple-100 shadow-sm">
-                      <span className="text-purple-400 text-sm">🧘</span>
-                      <p className="leading-relaxed text-gray-700 font-medium">정신적으로 힘든 시기인가요? 나만의 편안한 공간에서 휴식이 필요해요.</p>
-                    </div>
-                  )}
-                  {parseFloat(categoryAverages.nutrition) < 3 && (
-                    <div className="flex items-start gap-2.5 p-3 bg-yellow-50 rounded-2xl border border-yellow-100 shadow-sm">
-                      <span className="text-yellow-500 text-sm">🍎</span>
-                      <p className="leading-relaxed text-gray-700 font-medium">영양 섭취에 더 신경을 써주세요. 건강한 식단이 기분을 바꿀 수 있어요.</p>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {streak >= 3 && (
-                <div className="flex items-start gap-2.5 p-3 bg-gradient-to-br from-[#FFE082]/20 to-[#FFD54F]/20 rounded-2xl border border-orange-100 shadow-sm">
-                  <span className="text-orange-400 text-sm">🔥</span>
-                  <p className="leading-relaxed text-gray-700 font-medium">{streak}일 연속 기록 중! 기록의 힘이 당신을 바꿀 거예요.</p>
-                </div>
-              )}
-            </>
+            <div className="text-center p-4 text-xs text-gray-400">
+              분석 정보를 불러오는 데 실패했습니다.
+            </div>
           )}
+
         </div>
       </div>
     </div>
