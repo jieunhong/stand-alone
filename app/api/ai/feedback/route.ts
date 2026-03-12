@@ -36,9 +36,10 @@ export async function POST(req: Request) {
 
         const model = new ChatGoogleGenerativeAI({
             apiKey: apiKey,
-            model: "gemini-2.0-flash",
-            maxOutputTokens: 1000,
+            model: "gemini-2.5-flash", // More stable quota for free tier
+            maxOutputTokens: 1500,
             streaming: true,
+            maxRetries: 0, // Fail fast if quota exceeded, instead of 50s pending
         });
 
         // Minify data to save input tokens
